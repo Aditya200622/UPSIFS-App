@@ -1,0 +1,8 @@
+
+{
+  "name": "UPSIFS",
+  "description": "A comprehensive university management platform for students, faculty, and administrators with role-based dashboards, LMS, and lab management.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
