@@ -281,10 +281,14 @@ onClick={() => setShowSOS(true)}
   </div>
 )}
 {showSOS && (
-  <div 
-  className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-  onClick={() => setShowSOS(false)}
->
+<>
+  
+  
+
+  <div
+    className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+    onClick={() => setShowSOS(false)}
+  >
     <div 
   className="bg-white rounded-3xl p-6 w-[90%] max-w-sm shadow-xl"
   onClick={(e) => e.stopPropagation()}
@@ -296,11 +300,24 @@ onClick={() => setShowSOS(true)}
 
       {/* CALL */}
       <button
-        onClick={() => {
-          const parentNumber = user.parentPhone || "8707760882";
-          window.open(`tel:${parentNumber}`, "_self");
-          setShowSOS(false);
-        }}
+       onClick={() => {
+
+  
+
+ if (!user.parentPhone) {
+  alert("Parent number not linked");
+  return;
+}
+
+const parentNumber = user.parentPhone;
+
+  
+
+  window.open(`tel:${parentNumber}`, "_self");
+
+  setShowSOS(false);
+}}
+         
         className="w-full mb-3 py-3 rounded-xl bg-red-100 text-red-600 font-semibold"
       >
         📞 Call Parent
@@ -308,19 +325,33 @@ onClick={() => setShowSOS(true)}
 
       {/* LOCATION */}
       <button
-        onClick={() => {
-          const parentNumber = user.parentPhone || "8707760882";
+ onClick={() => {
 
-          navigator.geolocation.getCurrentPosition((pos) => {
-            const { latitude, longitude } = pos.coords;
-            const link = `https://maps.google.com/?q=${latitude},${longitude}`;
+  if (!user.parentPhone) {
+    alert("Parent number not linked");
+    return;
+  }
 
-            const msg = `📍 My Location: ${link}`;
-            window.location.href = `https://wa.me/${parentNumber}?text=${encodeURIComponent(msg)}`;
-          });
+  const parentNumber = user.parentPhone;
 
-          setShowSOS(false);
-        }}
+  navigator.geolocation.getCurrentPosition((pos) => {
+
+    const { latitude, longitude } = pos.coords;
+
+    const link =
+      `https://maps.google.com/?q=${latitude},${longitude}`;
+
+    const msg =
+      `📍 My Location: ${link}`;
+
+    window.location.href =
+      `https://wa.me/${parentNumber}?text=${encodeURIComponent(msg)}`;
+
+  });
+
+  setShowSOS(false);
+
+}}
         className="w-full mb-3 py-3 rounded-xl bg-blue-100 text-blue-600 font-semibold"
       >
         📍 Share Location
@@ -329,10 +360,15 @@ onClick={() => setShowSOS(true)}
       {/* FULL SOS */}
       <button
         onClick={() => {
-          const parentNumber = user.parentPhone || "8707760882";
+          if (!user.parentPhone) {
+  alert("Parent number not linked");
+  return;
+}
 
-          const audio = new Audio("https://www.soundjay.com/misc/sounds/siren.wav");
-          audio.play();
+const parentNumber = user.parentPhone;
+
+          const audio = new Audio("/siren.mp3");
+audio.play();
 navigator.geolocation.getCurrentPosition(
   (pos) => {
     const { latitude, longitude } = pos.coords;
@@ -362,7 +398,7 @@ navigator.geolocation.getCurrentPosition(
         🚨 FULL SOS
       </button>
 
-      {/* CLOSE */}
+           {/* CLOSE */}
       <button
         onClick={() => setShowSOS(false)}
         className="w-full mt-3 text-gray-400 text-sm"
@@ -372,10 +408,13 @@ navigator.geolocation.getCurrentPosition(
 
     </div>
   </div>
+  </>
 )}
-      <div className="h-10"></div>
-    </div>
-  );
+
+<div className="h-10"></div>
+
+</div>
+);
 };
 
 export default Dashboard;

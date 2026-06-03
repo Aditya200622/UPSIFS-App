@@ -24,13 +24,13 @@ const AddTeacher: React.FC<Props> = ({ onBack }) => {
 
   const [loading, setLoading] = useState(false);
 
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    department: ''
-  });
-
+const [formData, setFormData] = useState({
+  name: '',
+  email: '',
+  password: '',
+  phone: '',
+  department: ''
+});
   // ================= HANDLE INPUT =================
 
   const handleChange = (
@@ -76,33 +76,35 @@ const AddTeacher: React.FC<Props> = ({ onBack }) => {
       const uid = userCredential.user.uid;
 
       // 🔥 SAVE FIRESTORE USER
-      await addDoc(collection(db, 'users'), {
+    await addDoc(collection(db, 'users'), {
 
-        uid,
+  authId: uid,
 
-        name: formData.name,
+  uid,
 
-        email: formData.email,
+  name: formData.name,
 
-        password: formData.password,
+  email: formData.email,
 
-        department: formData.department,
+  phone: `+91${formData.phone}`,
 
-        role: 'teacher',
+  department: formData.department,
 
-        createdAt: new Date()
+  role: 'teacher',
 
-      });
+  createdAt: new Date()
 
+});
       alert('Teacher Added Successfully ✅');
 
       // RESET
-      setFormData({
-        name: '',
-        email: '',
-        password: '',
-        department: ''
-      });
+    setFormData({
+  name: '',
+  email: '',
+  password: '',
+  phone: '',
+  department: ''
+});
 
     } catch (error: any) {
 
@@ -196,6 +198,20 @@ const AddTeacher: React.FC<Props> = ({ onBack }) => {
           onChange={handleChange}
           className="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl outline-none"
         />
+        <input
+  type="tel"
+  name="phone"
+  placeholder="Phone Number"
+  value={formData.phone}
+  onChange={(e) =>
+    setFormData({
+      ...formData,
+      phone: e.target.value.replace(/\D/g, '')
+    })
+  }
+  maxLength={10}
+  className="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl outline-none"
+/>
 
         {/* DEPARTMENT */}
 

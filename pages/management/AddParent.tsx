@@ -34,61 +34,21 @@ const AddParent: React.FC<Props> = ({ onBack }) => {
   const [loading, setLoading] =
     useState(false);
 
-  const [students, setStudents] =
-    useState<any[]>([]);
-
+ 
+const [matchedStudent, setMatchedStudent] =
+  useState<any>(null);
   const [formData, setFormData] =
     useState({
       name: '',
       email: '',
       password: '',
       phone: '',
-      childEmail: ''
+
     });
 
   // ================= FETCH STUDENTS =================
 
-  useEffect(() => {
-
-    const fetchStudents = async () => {
-
-      try {
-
-        const snapshot =
-          await getDocs(
-            collection(db, 'users')
-          );
-
-        const data: any[] = [];
-
-        snapshot.forEach((d) => {
-
-          const user = d.data();
-
-          if (user.role === 'student') {
-
-            data.push({
-              id: d.id,
-              ...user
-            });
-
-          }
-
-        });
-
-        setStudents(data);
-
-      } catch (error) {
-
-        console.error(error);
-
-      }
-
-    };
-
-    fetchStudents();
-
-  }, []);
+  
 
   // ================= HANDLE CHANGE =================
 
@@ -110,12 +70,12 @@ const AddParent: React.FC<Props> = ({ onBack }) => {
 
   const handleSubmit = async () => {
 
-    if (
-      !formData.name ||
-      !formData.email ||
-      !formData.password ||
-      !formData.childEmail
-    ) {
+   if (
+  !formData.name ||
+  !formData.email ||
+  !formData.password ||
+  !formData.phone
+) {
 
       alert(
         'Please fill all fields'
@@ -165,15 +125,12 @@ const AddParent: React.FC<Props> = ({ onBack }) => {
             password:
               formData.password,
 
-            phone:
-              formData.phone,
-
+           phone:
+  `+91${formData.phone}`,
             role:
               'parent',
 
-            childEmail:
-              formData.childEmail,
-
+           
             createdAt:
               new Date()
 
@@ -187,49 +144,56 @@ const AddParent: React.FC<Props> = ({ onBack }) => {
 
       // ================= FIND STUDENT =================
 
-      const selectedStudent =
-        students.find(
-          (s) =>
-            s.email ===
-            formData.childEmail
-        );
+const studentSnapshot =
+  await getDocs(
+    collection(db, 'users')
+  );
 
-      // ================= LINK STUDENT =================
+let linkedStudent = null;
 
-      if (selectedStudent) {
+for (const studentDoc of studentSnapshot.docs) {
 
-        await updateDoc(
-          doc(
-            db,
-            'users',
-            selectedStudent.id
-          ),
-          {
+  const studentData = studentDoc.data();
 
-            parentId:
-              parentRef.id,
+  if (
+    studentData.role === 'student' &&
+    (
+      studentData.parentEmail === formData.email ||
+      studentData.parentPhone === `+91${formData.phone}`
+    )
+  ) {
 
-            parentAuthId:
-              parentAuthId,
+    linkedStudent = {
+      id: studentDoc.id,
+      ...studentData
+    };
 
-            parentEmail:
-              formData.email,
+ await updateDoc(
+  doc(db, 'users', studentDoc.id),
+  {
+    parentId: parentRef.id,
+    parentAuthId: parentAuthId,
+    parentEmail: formData.email,
+    parentPhone: `+91${formData.phone}`
+  }
+);
+setMatchedStudent(linkedStudent);
+    break;
+  }
+}
+if (!linkedStudent) {
 
-            parentPhone:
-              formData.phone
+  alert(
+    'Parent Added Successfully ✅\n\nNo matching student found.'
+  );
 
-          }
-        );
+} else {
 
-        console.log(
-          'Student linked with parent ✅'
-        );
+  alert(
+    'Parent Added Successfully ✅\n\nStudent Linked Successfully 🎉'
+  );
 
-      }
-
-      alert(
-        'Parent Added Successfully ✅'
-      );
+}
 
       // ================= RESET =================
 
@@ -237,8 +201,7 @@ const AddParent: React.FC<Props> = ({ onBack }) => {
         name: '',
         email: '',
         password: '',
-        phone: '',
-        childEmail: ''
+        phone: ''
       });
 
     } catch (error: any) {
@@ -329,38 +292,33 @@ const AddParent: React.FC<Props> = ({ onBack }) => {
           name="phone"
           placeholder="Phone Number"
           value={formData.phone}
-          onChange={handleChange}
+            onChange={(e) =>
+    setFormData({
+      ...formData,
+      phone: e.target.value.replace(/\D/g, '')
+    })
+  }
+  maxLength={10}
           className="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl outline-none"
         />
+        {matchedStudent && (
+  <div className="bg-green-50 border border-green-200 rounded-xl p-3">
 
-        {/* STUDENT DROPDOWN */}
-        <select
-          name="childEmail"
-          value={formData.childEmail}
-          onChange={handleChange}
-          className="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl outline-none"
-        >
+    <p className="font-semibold text-green-700">
+      Student Linked ✅
+    </p>
 
-          <option value="">
-            Select Student
-          </option>
+    <p>{matchedStudent.name}</p>
 
-          {students.map((student) => (
+    <p className="text-sm text-gray-500">
+      {matchedStudent.email}
+    </p>
 
-            <option
-              key={student.id}
-              value={student.email}
-            >
+  </div>
+)}
 
-              {student.name}
-              {' '}
-              ({student.email})
-
-            </option>
-
-          ))}
-
-        </select>
+        
+      
 
         {/* BUTTON */}
         <button

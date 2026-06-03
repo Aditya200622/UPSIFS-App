@@ -23,9 +23,10 @@ import {
 } from 'lucide-react';
 
 import {
-
-  signInWithEmailAndPassword
-
+  signInWithEmailAndPassword,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  ConfirmationResult
 } from 'firebase/auth';
 
 import {
@@ -98,6 +99,8 @@ const Login: React.FC<LoginProps> = ({
 
   const [loading, setLoading] =
     useState(false);
+    const [confirmationResult, setConfirmationResult] =
+  useState<ConfirmationResult | null>(null);
 
   // ================= ROLES =================
 
@@ -314,24 +317,27 @@ const Login: React.FC<LoginProps> = ({
           'LOGIN SUCCESS'
         );
 
-        onLogin({
+  onLogin({
 
-          id: userDoc.id,
+  id: userDoc.id,
 
-          uid: firebaseUser.uid,
+  uid: firebaseUser.uid,
 
-          name:
-            userData.name || '',
+  name: userData.name || '',
 
-          email:
-            userData.email || '',
+  email: userData.email || '',
 
-          password: '',
+  password: '',
 
-          role:
-            firestoreRole
+  role: userData.role as UserRole,
 
-        } as User);
+  parentPhone: userData.parentPhone || '',
+
+  parentEmail: userData.parentEmail || '',
+
+  parentId: userData.parentId || ''
+
+} as User);
 
       } catch (error: any) {
 
@@ -354,38 +360,140 @@ const Login: React.FC<LoginProps> = ({
     };
 
   // ================= OTP =================
+const handleSendOtp = async () => {
 
-  const handleSendOtp = () => {
+  try {
+     
+    
+    
+    console.log("PHONE:", phone);
 
-    if (
 
-      !phone ||
+const recaptcha = new RecaptchaVerifier(
+  auth,
+  "recaptcha-container",
+  {
+    size: "normal"
+  }
+);
+    
 
-      phone.length < 10
+    await recaptcha.render();
+    
+    
 
-    ) {
+    const formattedPhone =
+      phone.startsWith("+91")
+        ? phone
+        : `+91${phone}`;
+
+    const result =
+      await signInWithPhoneNumber(
+        auth,
+        formattedPhone,
+        recaptcha
+      );
+
+    setConfirmationResult(result);
+    setOtpSent(true);
+
+    alert("OTP Sent");
+
+  } catch (error: any) {
+
+    console.error(error);
+    alert(error?.message || "OTP Failed");
+
+  }
+
+};
+
+
+  const handleVerifyOtp = async () => {
+
+  try {
+
+    if (!confirmationResult) {
+
+      alert('Send OTP first');
+
+      return;
+
+    }
+
+    const result =
+      await confirmationResult.confirm(
+        otp
+      );
+
+    const firebaseUser =
+      result.user;
+
+    const formattedPhone =
+      phone.startsWith('+91')
+        ? phone
+        : `+91${phone}`;
+
+   const q = query(
+  collection(db, 'users'),
+  where(
+    'phone',
+    '==',
+    formattedPhone
+  )
+);
+
+    const snapshot =
+      await getDocs(q);
+
+    if (snapshot.empty) {
 
       alert(
-        'Enter valid phone number'
+        'Phone not registered'
       );
 
       return;
 
     }
 
-    setOtpSent(true);
+    const userDoc =
+      snapshot.docs[0];
 
-  };
+    const userData =
+      userDoc.data();
+onLogin({
 
-  const handleVerifyOtp = () => {
+  id: userDoc.id,
+
+  uid: firebaseUser.uid,
+
+  name: userData.name || '',
+
+  email: userData.email || '',
+
+  password: '',
+
+  role: userData.role,
+
+  parentPhone: userData.parentPhone || '',
+
+  parentEmail: userData.parentEmail || '',
+
+  parentId: userData.parentId || ''
+
+} as User);
+  } catch (error: any) {
+
+    console.error(error);
 
     alert(
-
-      'Phone login disabled for now. Use email login.'
-
+      error?.message ||
+      'Invalid OTP'
     );
 
-  };
+  }
+
+};
 
   return (
 
@@ -669,7 +777,7 @@ const Login: React.FC<LoginProps> = ({
                 </>
 
               )}
-
+<div id="recaptcha-container"></div>
             </div>
 
           )}

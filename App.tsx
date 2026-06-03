@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-
+import React, { useState, useEffect } from 'react';
+import MarkAttendance from "./pages/teacher/MarkAttendance";
 import AddNotice from './pages/management/AddNotice';
 import ParentsList from './pages/management/ParentsList';
 import ParentDetail from './pages/management/ParentDetail';
@@ -57,6 +57,13 @@ const App: React.FC = () => {
 
   const [showSplash, setShowSplash] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  useEffect(() => {
+  const savedUser = localStorage.getItem('upsifs_user');
+
+  if (savedUser) {
+    setUser(JSON.parse(savedUser));
+  }
+}, []);
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
@@ -70,37 +77,79 @@ const App: React.FC = () => {
   }
 
   /* ---------------- AUTH ---------------- */
-  const handleLogin = (loggedInUser: User) => {
-    setUser(loggedInUser);
-    setCurrentPage('dashboard');
-  };
+const handleLogin = (loggedInUser: User) => {
 
+  localStorage.setItem(
+    'upsifs_user',
+    JSON.stringify(loggedInUser)
+  );
+
+  setUser(loggedInUser);
+  setCurrentPage('dashboard');
+};
   const handleLogout = () => {
-    setUser(null);
-    setSelectedRole(null);
-    setCurrentPage('dashboard');
-    setIsDrawerOpen(false);
-  };
+
+  localStorage.removeItem('upsifs_user');
+
+  setUser(null);
+  setSelectedRole(null);
+  setCurrentPage('dashboard');
+  setIsDrawerOpen(false);
+};
 
   /* ---------------- NAVIGATION ---------------- */
   const toggleDrawer = () => setIsDrawerOpen(!isDrawerOpen);
 
-  const navigateTo = (page: string, params?: any) => {
-    setCurrentPage(page);
-    
+const navigateTo = (page: string, params?: any) => {
 
-    if (params?.studentId) {
-      setSelectedStudentId(params.studentId);
-    }
-    if (params?.parentId) {
-  setSelectedParentId(params.parentId);
-}
-    if (params?.teacherId) {
-  setSelectedTeacherId(params.teacherId);
-}
+  // MANAGEMENT ONLY PAGES
+  const managementPages = [
+    'add_notice',
+    'add_student',
+    'add_teacher',
+    'teachers_list',
+    'approved_leaves',
+  ];
 
-    setIsDrawerOpen(false);
-  };
+  // TEACHER ONLY PAGES
+  const teacherPages = [
+    'upload_ppt',
+    'edit_timetable',
+    'queries',
+  ];
+
+  // BLOCK MANAGEMENT PAGES
+  if (
+    managementPages.includes(page) &&
+    user?.role !== UserRole.MANAGEMENT
+  ) {
+    return;
+  }
+
+  // BLOCK TEACHER PAGES
+  if (
+    teacherPages.includes(page) &&
+    user?.role !== UserRole.TEACHER
+  ) {
+    return;
+  }
+
+  setCurrentPage(page);
+
+  if (params?.studentId) {
+    setSelectedStudentId(params.studentId);
+  }
+
+  if (params?.parentId) {
+    setSelectedParentId(params.parentId);
+  }
+
+  if (params?.teacherId) {
+    setSelectedTeacherId(params.teacherId);
+  }
+
+  setIsDrawerOpen(false);
+};
   
 
   /* ---------------- LOGIN SCREEN ---------------- */
@@ -161,6 +210,10 @@ const App: React.FC = () => {
     /* ---------------- TEACHER ---------------- */
     if (user.role === UserRole.TEACHER) {
       switch (currentPage) {
+        case "mark_attendance":
+  return (
+    <MarkAttendance />
+  );
 
         case 'dashboard':
           return <Dashboard user={user} setCurrentPage={navigateTo} />;
